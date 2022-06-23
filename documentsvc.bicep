@@ -1,8 +1,7 @@
 param service string 
 //Resgroup 
-param resourceGroupName string = '${service}-RG'
 
-param subId string = 'b13d11b3-9583-4815-be4c-a7fddee16992'
+//param subId string = 'b13d11b3-9583-4815-be4c-a7fddee16992'
 /// APP SERVICE PLAN ///
 param asp_name string = '${service}-ASP'  
 
@@ -17,16 +16,18 @@ param appserviceslot_name string = '${appservice_name}/staging'
 param appconfig_name string = '${service}-AC'
 
 // KEYVAULT NAME -KV ////
-param servkv  string  ='prodplat80-Test'
+param servkv  string  ='prodplat81-Test'
 param keyVault_name string = '${servkv}-KV' // KEYVAULT 
+
+param vaulturl string = 'https://${keyVault_name}.vault.azure.net/'
 
 
 // COSMOS DB ///
-param documentcosmosdb_name string = 'documentcosmosdata_namedb'  // Cosmos-DB Name
+//param documentcosmosdb_name string = 'documentcosmosdata_namedb'  // Cosmos-DB Name
 
 
 // STORAGE ACCOUNT //
-param storageacct_name string = 'ntprodplatformdocumentstoragu1' 
+//param storageacct_name string = 'ntprodplatformdocumentstoragu1' 
 
 
 /// VNET ///
@@ -40,17 +41,19 @@ var subnet_SN = 'NT-Prod-Platform-NET-Partner-SN'
 param Product string = 'Partner Service'
 var Environment  = 'Production'
 var Project = 'Platform'
+var appsvctype = 'prod'
+
 param workspaces_defaultworkspace_b13d11b3_9583_4815_be4c_a7fddee16992_eus_externalid string = '/subscriptions/b13d11b3-9583-4815-be4c-a7fddee16992/resourceGroups/defaultresourcegroup-eus/providers/microsoft.operationalinsights/workspaces/defaultworkspace-b13d11b3-9583-4815-be4c-a7fddee16992-eus'
 
-
-
+//Location
+ param Location string = resourceGroup().location
 
 
 
 /// APP CONFIGURATION ///
 resource appconfiguration 'Microsoft.AppConfiguration/configurationStores@2021-10-01-preview' = {
   name: appconfig_name
-  location: resourceGroup().location
+  location: Location
 
   tags: {
     owner: 'Andrew Yirak'
@@ -83,7 +86,7 @@ resource appconfiguration 'Microsoft.AppConfiguration/configurationStores@2021-1
 
 resource kv_resource 'Microsoft.KeyVault/vaults@2019-09-01' = {
   name: keyVault_name
-  location: resourceGroup().location
+  location: Location
   tags: {
     owner: 'Andrew Yirak'
     Department: 'NAF Tech'
@@ -280,10 +283,10 @@ resource kv_resource 'Microsoft.KeyVault/vaults@2019-09-01' = {
     enableSoftDelete: true
     softDeleteRetentionInDays: 90
     enableRbacAuthorization: false
-    vaultUri: 'https://${keyVault_name}.vault.azure.net/'
+    vaultUri: vaulturl
     provisioningState: 'Succeeded'
-    publicNetworkAccess: 'Enabled'
      enablePurgeProtection: true
+      createMode: 'default'
   }
 }
 
@@ -293,13 +296,15 @@ resource kv_resource 'Microsoft.KeyVault/vaults@2019-09-01' = {
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2020-12-01' = {
   name: asp_name
-  location: resourceGroup().location
+  location: Location
+
   tags: {
     owner: 'Andrew Yirak'
     Department: 'NAF Tech'
     Environment: Environment
     Product: Product 
     Project: Project
+    
   }
 
   sku: {
@@ -341,7 +346,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2020-12-01' = {
 resource appService 'Microsoft.Web/sites@2018-11-01' = {
 
   name: appservice_name
-  location: resourceGroup().location
+  location: Location
 
 
   tags: {
@@ -350,15 +355,21 @@ resource appService 'Microsoft.Web/sites@2018-11-01' = {
     Environment: Environment
     Product: Product 
     Project: Project
+    appsvctype : appsvctype
+
   }
   kind:'app'
   identity: {
     type: 'SystemAssigned'
   }
-  
+   
   properties: {
     
     serverFarmId: appServicePlan.id
+     enabled: true
+      
+      
+    
     
   
   }
@@ -393,12 +404,18 @@ resource appservicesetting 'Microsoft.Web/sites/config@2021-03-01' = {
              }
              {
               name: 'ASPNETCORE_ENVIRONMENT'
-              value : 'Production'
+
+              // if true, use Production, else use Staging
+
+              value : appService.tags[ appsvctype ]   ? 'Production' : 'Staging'
+        
             }
-
-
+                 
+            
+ 
 
           ]
+        
         alwaysOn:true
         virtualApplications:  [
           {
@@ -413,6 +430,7 @@ resource appservicesetting 'Microsoft.Web/sites/config@2021-03-01' = {
         vnetPrivatePortsCount: 0
         localMySqlEnabled: false
         managedServiceIdentityId: 1558
+        
         ipSecurityRestrictions: [
           {
             vnetSubnetResourceId: '${virtualnetworks_nt_prod_platform_net_vnet_externalid}/subnets/NT-Prod-Platform-NET-APIM-SN'
@@ -474,7 +492,17 @@ resource appservicesetting 'Microsoft.Web/sites/config@2021-03-01' = {
 // Web App Staging Slot
 resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
   name: appserviceslot_name
-  location: resourceGroup().location
+  location: Location
+  tags: {
+    owner: 'Andrew Yirak'
+    Department: 'NAF Tech'
+    Environment: Environment
+    Product: Product 
+    Project: Project
+    appsvctype : 'staging'
+
+  }
+
   kind: 'app'
     identity: {
        type: 'SystemAssigned'
@@ -482,6 +510,8 @@ resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
   properties: {
     
     serverFarmId: appServicePlan.id
+     enabled: true
+     
     
     
   }
@@ -497,7 +527,7 @@ resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
 
 resource appInsightsComponentS 'Microsoft.Insights/components@2020-02-02' = {
   name: appInsights_name
-  location: resourceGroup().location
+  location: Location
    
   tags: {
     owner: 'Andrew Yirak'
@@ -508,7 +538,7 @@ resource appInsightsComponentS 'Microsoft.Insights/components@2020-02-02' = {
 
   }
 
-  
+   
   kind: 'web'
   properties: {      
     Application_Type: 'web'
@@ -516,7 +546,7 @@ resource appInsightsComponentS 'Microsoft.Insights/components@2020-02-02' = {
     RetentionInDays: 90  
     publicNetworkAccessForIngestion: 'Enabled'
     WorkspaceResourceId: workspaces_defaultworkspace_b13d11b3_9583_4815_be4c_a7fddee16992_eus_externalid  
-     
+    
   }
 
   dependsOn: [
@@ -528,7 +558,7 @@ resource appInsightsComponentS 'Microsoft.Insights/components@2020-02-02' = {
 
 //resource storageaccount 'Microsoft.Storage/storageAccounts@2021-02-01' = {
 //  name: storageacct_name
-// location: resourceGroup().location
+// location: Location
 
  // kind: 'StorageV2'
   //sku: {
