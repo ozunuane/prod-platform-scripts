@@ -16,7 +16,7 @@ param appserviceslot_name string = '${appservice_name}/staging'
 param appconfig_name string = '${service}-AC'
 
 // KEYVAULT NAME -KV ////
-param servkv  string  ='prodplat89-Test'
+param servkv  string  ='NT-Prod-Plat-Partner2'
 param keyVault_name string = '${servkv}-KV' // KEYVAULT 
 
 param vaulturl string = 'https://${keyVault_name}.vault.azure.net/'
@@ -538,8 +538,7 @@ resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
    
         'APPLICATIONINSIGHTS_CONNECTION_STRING'
         'ASPNETCORE_ENVIRONMENT' 
-
-    
+        'ASPNETCORE_ENVIRONMENT2' 
       ]
        
     }
