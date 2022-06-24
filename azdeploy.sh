@@ -8,8 +8,8 @@ echo '##############################################################'
 
 az deployment group create \
 --resource-group  NT-Prod-Platform-Partner-RG \
---template-file documentsvc.bicep \
---parameters service='prodplat80-Test'  \
+--template-file documentsvc1.bicep \
+--parameters service='prodplat89-Test'  \
   --confirm-with-what-if \
 
 echo '#################################################x#############'

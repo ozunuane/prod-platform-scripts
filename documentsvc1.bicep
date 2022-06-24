@@ -16,7 +16,7 @@ param appserviceslot_name string = '${appservice_name}/staging'
 param appconfig_name string = '${service}-AC'
 
 // KEYVAULT NAME -KV ////
-param servkv  string  ='prodplat81-Test'
+param servkv  string  ='prodplat89-Test'
 param keyVault_name string = '${servkv}-KV' // KEYVAULT 
 
 param vaulturl string = 'https://${keyVault_name}.vault.azure.net/'
@@ -45,18 +45,9 @@ param workspaces_defaultworkspace_b13d11b3_9583_4815_be4c_a7fddee16992_eus_exter
 
 //Location
  param Location string = resourceGroup().location
-////////////////////
 
 
 
-
-
-
-
-
-
-
- 
 /// APP CONFIGURATION ///
 resource appconfiguration 'Microsoft.AppConfiguration/configurationStores@2021-10-01-preview' = {
   name: appconfig_name
@@ -350,7 +341,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2020-12-01' = {
 
 
 /// APP SERVICE ///
-resource appService 'Microsoft.Web/sites@2018-11-01' =  {
+resource appService 'Microsoft.Web/sites@2018-11-01' = {
 
   name: appservice_name
   location: Location
@@ -362,6 +353,7 @@ resource appService 'Microsoft.Web/sites@2018-11-01' =  {
     Environment: Environment
     Product: Product 
     Project: Project
+    Env: 'prod'
 
   }
   kind:'app'
@@ -374,6 +366,9 @@ resource appService 'Microsoft.Web/sites@2018-11-01' =  {
     serverFarmId: appServicePlan.id
      enabled: true
       
+      
+    
+    
   
   }
 
@@ -396,6 +391,7 @@ resource webappVnet 'Microsoft.Web/sites/networkConfig@2020-06-01' = {
 /// APP SERVICE SETTINGS ///
 resource appservicesetting 'Microsoft.Web/sites/config@2021-03-01' = {
       name: 'web'
+       
       parent: appService
        
 
@@ -407,13 +403,17 @@ resource appservicesetting 'Microsoft.Web/sites/config@2021-03-01' = {
              }
              {
               name: 'ASPNETCORE_ENVIRONMENT'
-
-              // if true, use Production, else use Staging
-
-              value :   'Production' 
-        
+              value : appService.tags.Env == 'prod' ? 'Production' : 'null'  
             }
+
+
+            {
+              name: 'ASPNETCORE_ENVIRONMENT2'
+              value : webAppStagingSlot.tags.Env == 'staging' ? 'Staging' : 'null'  
+            }
+                 
             
+ 
 
           ]
         
@@ -470,10 +470,11 @@ resource appservicesetting 'Microsoft.Web/sites/config@2021-03-01' = {
             name: 'Deny all'
             description: 'Deny all access'
           }
-        ]
+        ] 
+         
         scmIpSecurityRestrictionsUseMain: false
         http20Enabled: true
-        netFrameworkVersion: 'v6.0'
+        netFrameworkVersion:'v6.0'
         minTlsVersion: '1.2'
         scmMinTlsVersion: '1.2'
         ftpsState: 'Disabled'
@@ -500,110 +501,51 @@ resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
     Environment: Environment
     Product: Product 
     Project: Project
+    Env: 'staging'
+
 
   }
 
   kind: 'app'
     identity: {
        type: 'SystemAssigned'
-      
     }
-    properties: {
-      
-      serverFarmId: appServicePlan.id
-
-      
-      siteConfig: {
-       
-
-        virtualApplications:  [
-          {
-            virtualPath: '/'
-            physicalPath: 'site\\wwwroot'
-            preloadEnabled: true
-          }
-        ]
-        autoHealEnabled: false
-        vnetName: 'virtualnetworks/nt-prod-platform-net-vnet'
-        vnetRouteAllEnabled: true
-        vnetPrivatePortsCount: 0
-        localMySqlEnabled: false
-        managedServiceIdentityId: 1558
-        
-        ipSecurityRestrictions: [
-          {
-            vnetSubnetResourceId: '${virtualnetworks_nt_prod_platform_net_vnet_externalid}/subnets/NT-Prod-Platform-NET-APIM-SN'
-            action: 'Allow'
-            tag: 'Default'
-            priority: 150
-            name: 'Allow APIM'
-          }
-          {
-            vnetSubnetResourceId: '${virtualnetworks_nt_prod_platform_net_vnet_externalid}/subnets/${subnet_SN}'
-            action: 'Allow'
-            tag: 'Default'
-            priority: 200
-            name: 'Allow Campaign SN'
-          }
-          {
-            ipAddress: 'Any'
-            action: 'Deny'
-            priority: 2147483647
-            name: 'Deny all'
-            description: 'Deny all access'
-          }
-        ]
-        scmIpSecurityRestrictions: [
-          {
-            ipAddress: 'AzureCloud'
-            action: 'Allow'
-            tag: 'ServiceTag'
-            priority: 150
-            name: 'Allow ADO SN'
-          }
-          {
-            ipAddress: 'Any'
-            action: 'Deny'
-            priority: 2147483647
-            name: 'Deny all'
-            description: 'Deny all access'
-          }
-        ]
-        scmIpSecurityRestrictionsUseMain: false
-        http20Enabled: true
-        netFrameworkVersion: 'v6.0'
-        minTlsVersion: '1.2'
-        scmMinTlsVersion: '1.2'
-        ftpsState: 'Disabled'
-        preWarmedInstanceCount: 0
-        functionAppScaleLimit: 0
-        functionsRuntimeScaleMonitoringEnabled: false
-        minimumElasticInstanceCount: 0
-        azureStorageAccounts: {
-         
-        }
-   
-
-      
-      }
-    }
+  properties: {
+    
+    serverFarmId: appServicePlan.id
+     enabled: true
+     
     
     
   }
+  dependsOn: [
+    appService
+  ]
+}
+
 
 
 
   // Web App Staging Slot Config
-resource webAppStagingSlotConfig 'Microsoft.Web/sites/config@2021-03-01' = {
-  name: 'slotConfigNames'
-  parent: appService
-  properties: {
-    appSettingNames: [
-      'APPLICATIONINSIGHTS_CONNECTION_STRING'
-      'ASPNETCORE_ENVIRONMENT'
-    ]
+
+  resource webAppStagingSlotConfig 'Microsoft.Web/sites/config@2021-03-01' = {
+    name: 'slotConfigNames'
+    parent: appService
+
+    properties: {
+      
+      appSettingNames:  [
+   
+        'APPLICATIONINSIGHTS_CONNECTION_STRING'
+        'ASPNETCORE_ENVIRONMENT' 
+
+    
+      ]
+       
+    }
   }
-}
+
+
 
 
 
@@ -632,8 +574,7 @@ resource appInsightsComponentS 'Microsoft.Insights/components@2020-02-02' = {
     RetentionInDays: 90  
     publicNetworkAccessForIngestion: 'Enabled'
     WorkspaceResourceId: workspaces_defaultworkspace_b13d11b3_9583_4815_be4c_a7fddee16992_eus_externalid  
-    enabled: true
-
+    
   }
 
   dependsOn: [
