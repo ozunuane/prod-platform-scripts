@@ -1,7 +1,12 @@
 param service string 
-//Resgroup 
 
-//param subId string = 'b13d11b3-9583-4815-be4c-a7fddee16992'
+//ResourceGroup
+var  Resourcegroupsvc = resourceGroup().name 
+
+//subscription id 
+
+var subId  = 'b13d11b3-9583-4815-be4c-a7fddee16992'
+
 /// APP SERVICE PLAN ///
 param asp_name string = '${service}-ASP'  
 
@@ -16,10 +21,12 @@ param appserviceslot_name string = '${appservice_name}/staging'
 param appconfig_name string = '${service}-AC'
 
 // KEYVAULT NAME -KV ////
-param servkv  string  ='NT-Prod-Plat-Partner2'
+param servkv  string  ='NT-Prod-Plat-Partner11'
 param keyVault_name string = '${servkv}-KV' // KEYVAULT 
 
 param vaulturl string = 'https://${keyVault_name}.vault.azure.net/'
+
+param netFrameworkVersion string = 'v6.0'
 
 
 // COSMOS DB ///
@@ -45,6 +52,21 @@ param workspaces_defaultworkspace_b13d11b3_9583_4815_be4c_a7fddee16992_eus_exter
 
 //Location
  param Location string = resourceGroup().location
+
+
+
+
+
+//param secret_list array = [
+  
+ //{ 
+  //'AppConfiguration--ConnectionString':'Endpoint=https://nt-prod-platform-documentservice-ac.azconfig.io;Id=RtA3-laa-s0:sOBmmFekwqdZ0cCoc1WI;Secret=/QkzFW/RVc7CeOWN1DkkhMsVHfapETaDMKW6jocIIJI='
+ 
+// }  
+
+ //]
+
+
 
 
 
@@ -290,6 +312,12 @@ resource kv_resource 'Microsoft.KeyVault/vaults@2019-09-01' = {
 
 
 
+
+
+
+
+
+
 /// APP SERVICE PLAN  ///
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2020-12-01' = {
@@ -362,17 +390,50 @@ resource appService 'Microsoft.Web/sites@2018-11-01' = {
   }
    
   properties: {
-    
+     
     serverFarmId: appServicePlan.id
+     
      enabled: true
-      
-      
-    
-    
+
+      siteConfig: { 
+         
+         alwaysOn: true  
+         http20Enabled: true 
+         ftpsState: 'Disabled'        
+         scmIpSecurityRestrictionsUseMain: false 
+
+         minTlsVersion: '1.2'
+         use32BitWorkerProcess: false
+         managedPipelineMode:  'Integrated' 
+         httpLoggingEnabled: true  
+
+         metadata: [
+
+        {
+          name: 'CURRENT_STACK'
+          value: 'dotnetcore'
+        }
+      ]
+         netFrameworkVersion: netFrameworkVersion
+                         
+      }
+
+       clientAffinityEnabled: false
+       httpsOnly: true
+       redundancyMode: 'None'
+       hyperV: false
+       isXenon: false
+       reserved: false   
+       containerSize: 0
+       
   
   }
 
 }
+
+
+
+
 
 
 resource webappVnet 'Microsoft.Web/sites/networkConfig@2020-06-01' = {
@@ -394,29 +455,34 @@ resource appservicesetting 'Microsoft.Web/sites/config@2021-03-01' = {
        
       parent: appService
        
-
+  
          properties: {
+
             appSettings: [
+
              {
                name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-               value : appInsightsComponentS.properties.InstrumentationKey
+               value : appInsightsComponentS.properties.ConnectionString
              }
+
+
              {
               name: 'ASPNETCORE_ENVIRONMENT'
               value : appService.tags.Env == 'prod' ? 'Production' : 'null'  
-            }
+             }
 
 
-            {
-              name: 'ASPNETCORE_ENVIRONMENT2'
-              value : webAppStagingSlot.tags.Env == 'staging' ? 'Staging' : 'null'  
-            }
-                 
-            
+            { name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
+              value: appInsightsComponentS.properties.InstrumentationKey
+
+            }          
+                      
+                  
  
 
           ]
         
+
         alwaysOn:true
         virtualApplications:  [
           {
@@ -470,23 +536,14 @@ resource appservicesetting 'Microsoft.Web/sites/config@2021-03-01' = {
             name: 'Deny all'
             description: 'Deny all access'
           }
-        ] 
+        ]   
+             
          
-        scmIpSecurityRestrictionsUseMain: false
-        http20Enabled: true
-        netFrameworkVersion:'v6.0'
-        minTlsVersion: '1.2'
-        scmMinTlsVersion: '1.2'
-        ftpsState: 'Disabled'
-        preWarmedInstanceCount: 0
-        functionAppScaleLimit: 0
-        functionsRuntimeScaleMonitoringEnabled: false
-        minimumElasticInstanceCount: 0
-        azureStorageAccounts: {
-         
-        }
       }
+    
+    
 
+   
  }
 
 
@@ -495,6 +552,7 @@ resource appservicesetting 'Microsoft.Web/sites/config@2021-03-01' = {
 resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
   name: appserviceslot_name
   location: Location
+   
   tags: {
     owner: 'Andrew Yirak'
     Department: 'NAF Tech'
@@ -506,20 +564,42 @@ resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
 
   }
 
-  kind: 'app'
+  kind: 'slot'
     identity: {
        type: 'SystemAssigned'
     }
-  properties: {
+     properties: {
     
-    serverFarmId: appServicePlan.id
+     serverFarmId: appServicePlan.id
      enabled: true
+      
+     cloningInfo: {
+
+     sourceWebAppId: '/subscriptions/b13d11b3-9583-4815-be4c-a7fddee16992/resourceGroups/${Resourcegroupsvc}/providers/Microsoft.Web/sites/${appservice_name}'
      
-    
+    appSettingsOverrides:  {
+
+
+       'APPLICATIONINSIGHTS_CONNECTION_STRING' : appInsightsComponentS.properties.ConnectionString
+
+        'ASPNETCORE_ENVIRONMENT' : 'Staging'
+        
+        'APPINSIGHTS_INSTRUMENTATIONKEY': appInsightsComponentS.properties.InstrumentationKey
+
+
+
+    }
+
+     
+
+    }
+     
+
     
   }
   dependsOn: [
     appService
+
   ]
 }
 
@@ -530,21 +610,23 @@ resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
 
   resource webAppStagingSlotConfig 'Microsoft.Web/sites/config@2021-03-01' = {
     name: 'slotConfigNames'
-    parent: appService
+   parent: appService
 
     properties: {
-      
-      appSettingNames:  [
-   
-        'APPLICATIONINSIGHTS_CONNECTION_STRING'
-        'ASPNETCORE_ENVIRONMENT' 
-        'ASPNETCORE_ENVIRONMENT2' 
-      ]
-       
+         appSettingNames: [
+
+           'APPLICATIONINSIGHTS_CONNECTION_STRING'
+           'ASPNETCORE_ENVIRONMENT'
+
+         ]
+          
     }
-  }
-
-
+     dependsOn : [
+      
+      appServicePlan
+      
+     ]      
+ }
 
 
 
@@ -565,9 +647,11 @@ resource appInsightsComponentS 'Microsoft.Insights/components@2020-02-02' = {
 
   }
 
-   
+    
   kind: 'web'
-  properties: {      
+
+  properties: {
+
     Application_Type: 'web'
     publicNetworkAccessForQuery: 'Enabled'
     RetentionInDays: 90  
@@ -575,9 +659,10 @@ resource appInsightsComponentS 'Microsoft.Insights/components@2020-02-02' = {
     WorkspaceResourceId: workspaces_defaultworkspace_b13d11b3_9583_4815_be4c_a7fddee16992_eus_externalid  
     
   }
-
+  
   dependsOn: [
     appServicePlan
+    appService
   ]
 
 }

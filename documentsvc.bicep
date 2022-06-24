@@ -16,7 +16,7 @@ param appserviceslot_name string = '${appservice_name}/staging'
 param appconfig_name string = '${service}-AC'
 
 // KEYVAULT NAME -KV ////
-param servkv  string  ='prodplat81-Test'
+param servkv  string  ='prodplat82-Test'
 param keyVault_name string = '${servkv}-KV' // KEYVAULT 
 
 param vaulturl string = 'https://${keyVault_name}.vault.azure.net/'
