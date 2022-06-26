@@ -45,6 +45,10 @@ param workspaces_defaultworkspace_b13d11b3_9583_4815_be4c_a7fddee16992_eus_exter
 
 //Location
  param Location string = resourceGroup().location
+
+
+
+ param tenantID string = 'subscription().tenantId'
 ////////////////////
 
 
@@ -108,7 +112,7 @@ resource kv_resource 'Microsoft.KeyVault/vaults@2019-09-01' = {
       family: 'A'
       name: 'standard'
     }
-    tenantId: '04986fa2-6d28-46f7-966a-b1ac32f74fa8'
+    tenantId: tenantID
     networkAcls: {
       bypass: 'AzureServices'
       defaultAction: 'Allow'
@@ -122,8 +126,8 @@ resource kv_resource 'Microsoft.KeyVault/vaults@2019-09-01' = {
     }
     accessPolicies: [
       {
-        tenantId: '04986fa2-6d28-46f7-966a-b1ac32f74fa8'
-        objectId: appService.identity.principalId  
+        tenantId: tenantID
+        objectId: appService.identity.principalId
         permissions: {
           keys: []
           secrets: [
@@ -134,8 +138,8 @@ resource kv_resource 'Microsoft.KeyVault/vaults@2019-09-01' = {
         }
       }
       {
-        tenantId: '04986fa2-6d28-46f7-966a-b1ac32f74fa8'
-        objectId: webAppStagingSlot.identity.principalId 
+        tenantId: subscription().tenantId
+        objectId: webAppStagingSlot.identity.principalId
         permissions: {
           keys: []
           secrets: [
@@ -146,7 +150,7 @@ resource kv_resource 'Microsoft.KeyVault/vaults@2019-09-01' = {
         }
       }
       {
-        tenantId: '04986fa2-6d28-46f7-966a-b1ac32f74fa8'
+        tenantId: tenantID
         objectId: 'f24a6d96-3339-4851-86f4-9ea219816562'
         permissions: {
           keys: [
@@ -192,7 +196,7 @@ resource kv_resource 'Microsoft.KeyVault/vaults@2019-09-01' = {
         }
       }
       {
-        tenantId: '04986fa2-6d28-46f7-966a-b1ac32f74fa8'
+        tenantId: tenantID
         objectId: '751110db-be6f-4e07-920b-acae7246d031'
         permissions: {
           keys: [
@@ -238,7 +242,7 @@ resource kv_resource 'Microsoft.KeyVault/vaults@2019-09-01' = {
         }
       }
       {
-        tenantId: '04986fa2-6d28-46f7-966a-b1ac32f74fa8'
+        tenantId: tenantID
         objectId: '933d01c2-e2b3-419d-977c-2cb05c53dd89'
         permissions: {
           keys: [
@@ -491,6 +495,7 @@ resource appservicesetting 'Microsoft.Web/sites/config@2021-03-01' = {
 
 
 // Web App Staging Slot
+
 resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
   name: appserviceslot_name
   location: Location
@@ -504,17 +509,36 @@ resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
   }
 
   kind: 'app'
-    identity: {
-       type: 'SystemAssigned'
+
+   identity: {
+     type: 'SystemAssigned'
       
-    }
+   }
+
     properties: {
       
+
       serverFarmId: appServicePlan.id
 
       
       siteConfig: {
-       
+
+
+        metadata: [
+
+          {
+            name: 'CURRENT_STACK'
+            value: 'dotnetcore'
+          }
+        ]
+
+        appSettings: [
+          {
+            name: 'ASPNETCORE_ENVIRONMENT'
+            value :   'Staging' 
+      
+          }
+        ]
 
         virtualApplications:  [
           {
@@ -527,9 +551,7 @@ resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
         vnetName: 'virtualnetworks/nt-prod-platform-net-vnet'
         vnetRouteAllEnabled: true
         vnetPrivatePortsCount: 0
-        localMySqlEnabled: false
-        managedServiceIdentityId: 1558
-        
+        localMySqlEnabled: false        
         ipSecurityRestrictions: [
           {
             vnetSubnetResourceId: '${virtualnetworks_nt_prod_platform_net_vnet_externalid}/subnets/NT-Prod-Platform-NET-APIM-SN'
@@ -569,6 +591,7 @@ resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
             description: 'Deny all access'
           }
         ]
+
         scmIpSecurityRestrictionsUseMain: false
         http20Enabled: true
         netFrameworkVersion: 'v6.0'
@@ -598,14 +621,16 @@ resource webAppStagingSlotConfig 'Microsoft.Web/sites/config@2021-03-01' = {
   name: 'slotConfigNames'
   parent: appService
   properties: {
+    
     appSettingNames: [
       'APPLICATIONINSIGHTS_CONNECTION_STRING'
       'ASPNETCORE_ENVIRONMENT'
     ]
   }
+   
 }
 
-
+ 
 
 
 

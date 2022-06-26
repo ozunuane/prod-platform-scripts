@@ -21,16 +21,12 @@ param appserviceslot_name string = '${appservice_name}/staging'
 param appconfig_name string = '${service}-AC'
 
 // KEYVAULT NAME -KV ////
-param servkv  string  ='NT-Prod-Plat-Pa11'
+param servkv  string  ='NT-Prod-Partn11'
 param keyVault_name string = '${servkv}-KV' // KEYVAULT 
 
 param vaulturl string = 'https://${keyVault_name}.vault.azure.net/'
 
 param netFrameworkVersion string = 'v6.0'
-
-var objectid_appservice   = appService.identity.principalId
-var objectid_appslot   = webAppStagingSlot.identity.principalId
-
 
 
 // COSMOS DB ///
@@ -60,15 +56,6 @@ param workspaces_defaultworkspace_b13d11b3_9583_4815_be4c_a7fddee16992_eus_exter
 
 
 
-
-//param secret_list array = [
-  
- //{ 
-  //'AppConfiguration--ConnectionString':'Endpoint=https://nt-prod-platform-documentservice-ac.azconfig.io;Id=RtA3-laa-s0:sOBmmFekwqdZ0cCoc1WI;Secret=/QkzFW/RVc7CeOWN1DkkhMsVHfapETaDMKW6jocIIJI='
- 
-// }  
-
- //]
 
 
 
@@ -108,7 +95,7 @@ resource appconfiguration 'Microsoft.AppConfiguration/configurationStores@2021-1
 
 /// KEY VAULT ///
 
-resource kv_resource 'Microsoft.KeyVault/vaults@2019-09-01' = {
+resource kv_resource 'Microsoft.KeyVault/vaults@2021-11-01-preview'= {
   name: keyVault_name
   location: Location
   tags: {
@@ -140,7 +127,7 @@ resource kv_resource 'Microsoft.KeyVault/vaults@2019-09-01' = {
     accessPolicies: [
       {
         tenantId: '04986fa2-6d28-46f7-966a-b1ac32f74fa8'
-        objectId: objectid_appservice
+        objectId:  appService.identity.principalId
         permissions: {
           keys: []
           secrets: [
@@ -152,7 +139,8 @@ resource kv_resource 'Microsoft.KeyVault/vaults@2019-09-01' = {
       }
       {
         tenantId: '04986fa2-6d28-46f7-966a-b1ac32f74fa8'
-        objectId: objectid_appslot
+        objectId:  webAppStagingSlotConfig.id
+        
         permissions: {
           keys: []
           secrets: [
@@ -312,6 +300,7 @@ resource kv_resource 'Microsoft.KeyVault/vaults@2019-09-01' = {
      enablePurgeProtection: true
       createMode: 'default'
   }
+ 
 }
 
 
@@ -568,15 +557,17 @@ resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
 
   }
 
-  kind: 'slot'
+  kind: 'web'
+
     identity: {
        type: 'SystemAssigned'
+      
     }
      properties: {
     
      serverFarmId: appServicePlan.id
      enabled: true
-      
+    keyVaultReferenceIdentity: webAppStagingSlotConfig.id
      cloningInfo: {
 
      sourceWebAppId: '/subscriptions/b13d11b3-9583-4815-be4c-a7fddee16992/resourceGroups/${Resourcegroupsvc}/providers/Microsoft.Web/sites/${appservice_name}'
@@ -589,8 +580,6 @@ resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
         'ASPNETCORE_ENVIRONMENT' : 'Staging'
         
         'APPINSIGHTS_INSTRUMENTATIONKEY': appInsightsComponentS.properties.InstrumentationKey
-
-
 
     }
 
@@ -614,9 +603,11 @@ resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
 
   resource webAppStagingSlotConfig 'Microsoft.Web/sites/config@2021-03-01' = {
     name: 'slotConfigNames'
-   parent: appService
+    parent: appService
 
+  
     properties: {
+
          appSettingNames: [
 
            'APPLICATIONINSIGHTS_CONNECTION_STRING'
@@ -665,6 +656,7 @@ resource appInsightsComponentS 'Microsoft.Insights/components@2020-02-02' = {
   }
   
   dependsOn: [
+    appServicePlan
     appService
   ]
 
