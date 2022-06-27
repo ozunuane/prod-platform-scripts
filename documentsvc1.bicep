@@ -21,7 +21,7 @@ param appserviceslot_name string = '${appservice_name}/staging'
 param appconfig_name string = '${service}-AC'
 
 // KEYVAULT NAME -KV ////
-param servkv  string  ='NT-Prod-Plat-Pa11'
+param servkv  string  ='NT-Prod-Plat-PA90'
 param keyVault_name string = '${servkv}-KV' // KEYVAULT 
 
 param vaulturl string = 'https://${keyVault_name}.vault.azure.net/'
@@ -29,7 +29,7 @@ param vaulturl string = 'https://${keyVault_name}.vault.azure.net/'
 param netFrameworkVersion string = 'v6.0'
 
 var objectid_appservice   = appService.identity.principalId
-var objectid_appslot   = webAppStagingSlot.identity.principalId
+//var objectid_appslot   = webAppStagingSlot.identity.principalId
 
 
 
@@ -95,10 +95,6 @@ resource appconfiguration 'Microsoft.AppConfiguration/configurationStores@2021-1
 
     disableLocalAuth: false
     enablePurgeProtection: false
-    encryption: { 
-  
-  
-    }
     softDeleteRetentionInDays: 7
     
   }
@@ -108,7 +104,7 @@ resource appconfiguration 'Microsoft.AppConfiguration/configurationStores@2021-1
 
 /// KEY VAULT ///
 
-resource kv_resource 'Microsoft.KeyVault/vaults@2019-09-01' = {
+resource kv_resource  'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
   name: keyVault_name
   location: Location
   tags: {
@@ -118,7 +114,7 @@ resource kv_resource 'Microsoft.KeyVault/vaults@2019-09-01' = {
     Product: Product
     Project: Project 
 
-  }
+}
 
    properties: {
     sku: {
@@ -138,30 +134,40 @@ resource kv_resource 'Microsoft.KeyVault/vaults@2019-09-01' = {
       ]
     }
     accessPolicies: [
+      //appservics
       {
+        applicationId: '04986fa2-6d28-46f7-966a-b1ac32f74fa8'
         tenantId: '04986fa2-6d28-46f7-966a-b1ac32f74fa8'
         objectId: objectid_appservice
         permissions: {
-          keys: []
-          secrets: [
+           keys: []
+           secrets: [
             'Get'
             'List'
           ]
           certificates: []
         }
       }
-      {
-        tenantId: '04986fa2-6d28-46f7-966a-b1ac32f74fa8'
-        objectId: objectid_appslot
-        permissions: {
-          keys: []
-          secrets: [
-            'Get'
-            'List'
-          ]
-          certificates: []
-        }
-      }
+
+      //Appslot
+
+      //{
+        
+      //applicationId: '04986fa2-6d28-46f7-966a-b1ac32f74fa8'
+      //tenantId: '04986fa2-6d28-46f7-966a-b1ac32f74fa8'
+      //objectId: objectid_appslot
+       //permissions: {
+         // keys: []
+          //secrets: [
+            //'Get'
+            //'List'
+         // ]
+          //certificates: []
+        //}
+      //}
+
+
+
       {
         tenantId: '04986fa2-6d28-46f7-966a-b1ac32f74fa8'
         objectId: 'f24a6d96-3339-4851-86f4-9ea219816562'
@@ -208,6 +214,8 @@ resource kv_resource 'Microsoft.KeyVault/vaults@2019-09-01' = {
           ]
         }
       }
+
+      
       {
         tenantId: '04986fa2-6d28-46f7-966a-b1ac32f74fa8'
         objectId: '751110db-be6f-4e07-920b-acae7246d031'
@@ -309,8 +317,8 @@ resource kv_resource 'Microsoft.KeyVault/vaults@2019-09-01' = {
     enableRbacAuthorization: false
     vaultUri: vaulturl
     provisioningState: 'Succeeded'
-     enablePurgeProtection: true
-      createMode: 'default'
+    enablePurgeProtection: true
+    createMode: 'default'
   }
 }
 
@@ -372,7 +380,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2020-12-01' = {
 
 
 
-/// APP SERVICE ///
+////// APP SERVICE ////////
 resource appService 'Microsoft.Web/sites@2018-11-01' = {
 
   name: appservice_name
@@ -392,6 +400,7 @@ resource appService 'Microsoft.Web/sites@2018-11-01' = {
   identity: {
     type: 'SystemAssigned'
   }
+
    
   properties: {
      
@@ -429,6 +438,7 @@ resource appService 'Microsoft.Web/sites@2018-11-01' = {
        isXenon: false
        reserved: false   
        containerSize: 0
+        
        
   
   }
@@ -446,6 +456,7 @@ resource webappVnet 'Microsoft.Web/sites/networkConfig@2020-06-01' = {
   properties: {
     subnetResourceId: '${virtualnetworks_nt_prod_platform_net_vnet_externalid}/subnets/${subnet_SN}'
     swiftSupported: true
+     
   }
 }
 
@@ -454,6 +465,7 @@ resource webappVnet 'Microsoft.Web/sites/networkConfig@2020-06-01' = {
 
 
 /// APP SERVICE SETTINGS ///
+
 resource appservicesetting 'Microsoft.Web/sites/config@2021-03-01' = {
       name: 'web'
        
@@ -501,6 +513,7 @@ resource appservicesetting 'Microsoft.Web/sites/config@2021-03-01' = {
         vnetPrivatePortsCount: 0
         localMySqlEnabled: false
         managedServiceIdentityId: 1558
+          
         
         ipSecurityRestrictions: [
           {
@@ -552,10 +565,16 @@ resource appservicesetting 'Microsoft.Web/sites/config@2021-03-01' = {
 
 
 
-// Web App Staging Slot
-resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
+//// Web App Staging Slot ////
+
+resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-03-01'  = {
+
   name: appserviceslot_name
   location: Location
+
+  identity: {
+    type: 'SystemAssigned'
+ }
    
   tags: {
     owner: 'Andrew Yirak'
@@ -568,29 +587,24 @@ resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
 
   }
 
-  kind: 'slot'
-    identity: {
-       type: 'SystemAssigned'
-    }
+   
      properties: {
     
      serverFarmId: appServicePlan.id
      enabled: true
       
-     cloningInfo: {
-
+     cloningInfo: { 
+        
      sourceWebAppId: '/subscriptions/b13d11b3-9583-4815-be4c-a7fddee16992/resourceGroups/${Resourcegroupsvc}/providers/Microsoft.Web/sites/${appservice_name}'
      
-    appSettingsOverrides:  {
+     appSettingsOverrides:  {
 
 
-       'APPLICATIONINSIGHTS_CONNECTION_STRING' : appInsightsComponentS.properties.ConnectionString
+        'APPLICATIONINSIGHTS_CONNECTION_STRING' : appInsightsComponentS.properties.ConnectionString
 
         'ASPNETCORE_ENVIRONMENT' : 'Staging'
         
         'APPINSIGHTS_INSTRUMENTATIONKEY': appInsightsComponentS.properties.InstrumentationKey
-
-
 
     }
 
@@ -600,36 +614,29 @@ resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
      
 
     
-  }
-  dependsOn: [
-    appService
-
-  ]
+  } 
+  
 }
-
 
 
 
   // Web App Staging Slot Config
 
   resource webAppStagingSlotConfig 'Microsoft.Web/sites/config@2021-03-01' = {
-    name: 'slotConfigNames'
+   name: 'slotConfigNames'
    parent: appService
 
     properties: {
          appSettingNames: [
 
            'APPLICATIONINSIGHTS_CONNECTION_STRING'
+
            'ASPNETCORE_ENVIRONMENT'
 
          ]
           
-    }
-     dependsOn : [
-      
-      appServicePlan
-      
-     ]      
+  }
+           
  }
 
 
@@ -669,6 +676,10 @@ resource appInsightsComponentS 'Microsoft.Insights/components@2020-02-02' = {
   ]
 
 }
+
+
+
+
 
 
 //resource storageaccount 'Microsoft.Storage/storageAccounts@2021-02-01' = {
