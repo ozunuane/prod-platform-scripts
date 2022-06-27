@@ -8,7 +8,7 @@ echo '##############################################################'
 
 az deployment group create \
 --resource-group  NT-Prod-Platform-Partner-RG \
---template-file documentsvc1.bicep \
+--template-file ntprod.bicep \
 --parameters service='NT-Prod-Plat-PA90' \
 --confirm-with-what-if \
 
