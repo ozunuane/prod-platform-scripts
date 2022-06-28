@@ -424,6 +424,7 @@ resource appservicesetting 'Microsoft.Web/sites/config@2021-03-01' = {
       
 
         properties: {
+           
 
             appSettings: [
 
@@ -465,6 +466,7 @@ resource appservicesetting 'Microsoft.Web/sites/config@2021-03-01' = {
         vnetPrivatePortsCount: 0
         localMySqlEnabled: false
         managedServiceIdentityId: 1558
+        
         
         
         
@@ -521,6 +523,7 @@ resource appservicesetting 'Microsoft.Web/sites/config@2021-03-01' = {
         functionsRuntimeScaleMonitoringEnabled: false
         minimumElasticInstanceCount: 0
         use32BitWorkerProcess: false
+        
         azureStorageAccounts: {
         
         }
@@ -644,7 +647,7 @@ resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
             description: 'Deny all access'
           }
         ]
-        
+        alwaysOn: true
         scmIpSecurityRestrictionsUseMain: false
         http20Enabled: true
         netFrameworkVersion: 'v6.0'
