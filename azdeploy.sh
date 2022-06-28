@@ -7,9 +7,9 @@ echo '/////////////////////////////////////////////////////////////'
 echo '##############################################################'
 
 az deployment group create \
---resource-group  NT-Prod-Platform-Partner-RG \
+--resource-group  NT-Prod-Platform-DocumentService-RG \
 --template-file nafprod.bicep \
---parameters service='NT-Prod-Platform-Partner' \
+--parameters service='NT-Prod-Platform-DocumentService' \
 --confirm-with-what-if \
 
 echo '#################################################x#############'

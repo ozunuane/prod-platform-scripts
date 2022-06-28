@@ -2,6 +2,13 @@ param service string
 //Resgroup 
 
 //param subId string = 'b13d11b3-9583-4815-be4c-a7fddee16992'
+
+/// SUBNET ///
+var subnet_SN = 'NT-Prod-Platform-NET-DocumentService-SN'
+
+// KEYVAULT NAME -KV ////
+param servkv  string  ='NT-Prod-Plat-DocSv'
+
 /// APP SERVICE PLAN ///
 param asp_name string = '${service}-ASP'  
 
@@ -10,13 +17,14 @@ param appInsights_name string = '${service}-AppInsights'
 
 /// APP SERVICE ///
 param appservice_name string = '${service}-AS' 
+
 param appserviceslot_name string = '${appservice_name}/staging'
 
 //// APP-CONFIGURATION ////
 param appconfig_name string = '${service}-AC'
 
-// KEYVAULT NAME -KV ////
-param servkv  string  ='NT-Prod-Plt-Partner'
+
+
 param keyVault_name string = '${servkv}-KV' // KEYVAULT 
 
 param vaulturl string = 'https://${keyVault_name}.vault.azure.net/'
@@ -32,13 +40,12 @@ param vaulturl string = 'https://${keyVault_name}.vault.azure.net/'
 
 /// VNET ///
 param virtualnetworks_nt_prod_platform_net_vnet_externalid string = '/subscriptions/b13d11b3-9583-4815-be4c-a7fddee16992/resourceGroups/nt-prod-platform-net-rg/providers/microsoft.network/virtualnetworks/NT-Prod-Platform-NET-VNet'
-/// SUBNET ///
-var subnet_SN = 'NT-Prod-Platform-NET-Partner-SN'
+
 
 
 
 /// TAGS ///
-param Product string = 'Partner Service'
+param Product string = 'Document Service'
 var Environment  = 'Production'
 var Project = 'Platform'
 param workspaces_defaultworkspace_b13d11b3_9583_4815_be4c_a7fddee16992_eus_externalid string = '/subscriptions/b13d11b3-9583-4815-be4c-a7fddee16992/resourceGroups/defaultresourcegroup-eus/providers/microsoft.operationalinsights/workspaces/defaultworkspace-b13d11b3-9583-4815-be4c-a7fddee16992-eus'
@@ -76,6 +83,7 @@ resource appconfiguration 'Microsoft.AppConfiguration/configurationStores@2021-1
     
   }
 }
+
 
 
 
@@ -561,7 +569,7 @@ resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
   }
 
     properties: {
-      
+
       clientAffinityEnabled: false
       httpsOnly: true
       hyperV: false
