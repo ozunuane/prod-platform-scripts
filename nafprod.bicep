@@ -394,6 +394,7 @@ resource appService 'Microsoft.Web/sites@2018-11-01' =  {
   
   serverFarmId: appServicePlan.id
   enabled: true
+   
       
   
   }
@@ -466,6 +467,7 @@ resource appservicesetting 'Microsoft.Web/sites/config@2021-03-01' = {
         managedServiceIdentityId: 1558
         
         
+        
         ipSecurityRestrictions: [
 
           {
@@ -518,6 +520,7 @@ resource appservicesetting 'Microsoft.Web/sites/config@2021-03-01' = {
         functionAppScaleLimit: 0
         functionsRuntimeScaleMonitoringEnabled: false
         minimumElasticInstanceCount: 0
+        use32BitWorkerProcess: false
         azureStorageAccounts: {
         
         }
