@@ -380,6 +380,11 @@ resource appService 'Microsoft.Web/sites@2018-11-01' =  {
   
   properties: {
     
+     clientAffinityEnabled: false
+     httpsOnly: true
+     hyperV: false
+     isXenon: false
+         
 
     siteConfig: {
        alwaysOn: true
@@ -424,7 +429,7 @@ resource appservicesetting 'Microsoft.Web/sites/config@2021-03-01' = {
       
 
         properties: {
-           
+            
 
             appSettings: [
 
@@ -511,7 +516,9 @@ resource appservicesetting 'Microsoft.Web/sites/config@2021-03-01' = {
             description: 'Deny all access'
           }
 
-        ]
+        ] 
+         
+          httpLoggingEnabled: true   
         scmIpSecurityRestrictionsUseMain: false
         http20Enabled: true
         netFrameworkVersion: 'v6.0'
@@ -554,13 +561,18 @@ resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
   }
 
     properties: {
-
-
+      
+      clientAffinityEnabled: false
+      httpsOnly: true
+      hyperV: false
+      isXenon: false
+ 
       serverFarmId: appServicePlan.id
 
       enabled: true
 
       siteConfig: {  
+         
         
         metadata: [
 
@@ -569,6 +581,7 @@ resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
             value: 'dotnetcore'
           }
         ]
+    
 
         appSettings: [
 
@@ -597,6 +610,7 @@ resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
             virtualPath: '/'
             physicalPath: 'site\\wwwroot'
             preloadEnabled: true
+             
             
           }
           
@@ -657,11 +671,10 @@ resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
         preWarmedInstanceCount: 0
         functionAppScaleLimit: 0
         functionsRuntimeScaleMonitoringEnabled: false
-        minimumElasticInstanceCount: 0
+        minimumElasticInstanceCount: 0     
         use32BitWorkerProcess: false
-        azureStorageAccounts: {
-        
-        }
+        httpLoggingEnabled: true   
+         
   
 
       
