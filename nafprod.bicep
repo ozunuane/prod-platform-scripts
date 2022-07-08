@@ -4,10 +4,10 @@ param service string
 //param subId string = 'b13d11b3-9583-4815-be4c-a7fddee16992'
 
 /// SUBNET ///
-var subnet_SN = 'NT-Prod-Platform-NET-DocumentService-SN'
+var subnet_SN = 'NT-Prod-Platform-NET-Communications-SN'
 
 // KEYVAULT NAME -KV ////
-param servkv  string  ='NT-Prod-Plat-DocSv'
+param servkv  string  ='NT-Prod-Plat-Comms'
 
 /// APP SERVICE PLAN ///
 param asp_name string = '${service}-ASP'  
@@ -27,7 +27,7 @@ param appconfig_name string = '${service}-AC'
 
 param keyVault_name string = '${servkv}-KV' // KEYVAULT 
 
-param vaulturl string = 'https://${keyVault_name}.vault.azure.net/'
+//param vaulturl string = 'https://${keyVault_name}.vault.azure.net/'
 
 
 // COSMOS DB ///
@@ -303,15 +303,12 @@ resource kv_resource 'Microsoft.KeyVault/vaults@2019-09-01' = {
     enableSoftDelete: true
     softDeleteRetentionInDays: 90
     enableRbacAuthorization: false
-    vaultUri: vaulturl
+    //vaultUri: vaulturl
     provisioningState: 'Succeeded'
     enablePurgeProtection: true
       createMode:  'default'
   }
-  dependsOn: [
-    appService
-    webAppStagingSlot
-  ]
+ 
 } 
 
 
@@ -331,19 +328,17 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2020-12-01' = {
     
   }
 
-  sku: {
+  sku: {  
     name: 'P1v2'
     tier: 'PremiumV2'
     size: 'P1v2'
     family: 'Pv2'
     capacity: 3
     
-    
-    
   }
 
   kind: 'app'
-    
+     
   properties: {
     
     perSiteScaling: false
@@ -354,10 +349,10 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2020-12-01' = {
     hyperV: false
     targetWorkerCount: 0
     targetWorkerSizeId: 0
-    
-    
+     
+       
 }
-  
+   
 
 }
 
@@ -367,6 +362,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2020-12-01' = {
 
 
 /// APP SERVICE ///
+
 resource appService 'Microsoft.Web/sites@2018-11-01' =  {
 
   name: appservice_name
@@ -387,15 +383,15 @@ resource appService 'Microsoft.Web/sites@2018-11-01' =  {
   }
   
   properties: {
-    
      clientAffinityEnabled: false
      httpsOnly: true
      hyperV: false
      isXenon: false
-         
+     scmSiteAlsoStopped: false
 
     siteConfig: {
        alwaysOn: true
+        
        metadata: [
 
         {
@@ -526,7 +522,7 @@ resource appservicesetting 'Microsoft.Web/sites/config@2021-03-01' = {
 
         ] 
          
-          httpLoggingEnabled: true   
+        httpLoggingEnabled: true   
         scmIpSecurityRestrictionsUseMain: false
         http20Enabled: true
         netFrameworkVersion: 'v6.0'
@@ -538,6 +534,7 @@ resource appservicesetting 'Microsoft.Web/sites/config@2021-03-01' = {
         functionsRuntimeScaleMonitoringEnabled: false
         minimumElasticInstanceCount: 0
         use32BitWorkerProcess: false
+        publishingUsername: '${service}-prod'
         
         azureStorageAccounts: {
         
@@ -569,7 +566,6 @@ resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
   }
 
     properties: {
-
       clientAffinityEnabled: false
       httpsOnly: true
       hyperV: false
@@ -581,7 +577,7 @@ resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
 
       siteConfig: {  
          
-        
+ 
         metadata: [
 
           {
@@ -597,6 +593,7 @@ resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
 
             name: 'ASPNETCORE_ENVIRONMENT'
             value :   'Staging' 
+
       
           }
 
@@ -610,6 +607,14 @@ resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
             name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
             value : appInsightsComponentS.properties.InstrumentationKey
           }
+
+
+          {
+            name: 'XDT_MicrosoftApplicationInsights_Mode'
+            value : 'Recommended'
+          }
+
+
     
         ]
 
@@ -682,7 +687,11 @@ resource webAppStagingSlot 'Microsoft.Web/sites/slots@2021-02-01' = {
         minimumElasticInstanceCount: 0     
         use32BitWorkerProcess: false
         httpLoggingEnabled: true   
-         
+       publishingUsername: '${service}-prod'
+       
+
+
+    
   
 
       
@@ -725,6 +734,7 @@ resource webAppStagingSlotConfig 'Microsoft.Web/sites/config@2021-03-01' = {
       'ASPNETCORE_ENVIRONMENT'
       'APPINSIGHTS_INSTRUMENTATIONKEY'
       
+      
     ]
 
     
@@ -755,6 +765,7 @@ resource appInsightsComponentS 'Microsoft.Insights/components@2020-02-02' = {
   
   kind: 'web'
     properties: {  
+        
 
     Application_Type: 'web'
     publicNetworkAccessForQuery: 'Enabled'
@@ -763,6 +774,7 @@ resource appInsightsComponentS 'Microsoft.Insights/components@2020-02-02' = {
     WorkspaceResourceId: workspaces_defaultworkspace_b13d11b3_9583_4815_be4c_a7fddee16992_eus_externalid  
     IngestionMode: 'LogAnalytics'
     Flow_Type: 'Bluefield'
+     
        
   }
 
