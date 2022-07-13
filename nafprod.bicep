@@ -3,7 +3,7 @@ param service string
 
 //param subId string = 'b13d11b3-9583-4815-be4c-a7fddee16992'
 
-/// SUBNET ///
+///// SUBNET /////
 var subnet_SN = 'NT-Prod-Platform-NET-Communications-SN'
 
 // KEYVAULT NAME -KV ////
